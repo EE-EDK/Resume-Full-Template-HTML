@@ -1,0 +1,22 @@
+# Extracted archive directory
+Ethan-D-Kunz-Resume-2025-master/
+
+# Archive files
+*.zip
+
+# Generated resume files
+*-Resume.html
+
+# Configuration backups
+resume-config.json
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~

@@ -1,0 +1,1433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Resume Template Builder</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #1a1f3a 0%, #0d1227 100%);
+            color: #fff;
+            overflow-x: hidden;
+        }
+
+        .builder-container {
+            display: grid;
+            grid-template-columns: 400px 1fr;
+            height: 100vh;
+        }
+
+        .controls-panel {
+            background: rgba(13, 18, 39, 0.95);
+            border-right: 2px solid rgba(196, 30, 58, 0.3);
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .controls-panel::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .controls-panel::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .controls-panel::-webkit-scrollbar-thumb {
+            background: rgba(196, 30, 58, 0.5);
+            border-radius: 4px;
+        }
+
+        .preview-panel {
+            background: #f5f5f5;
+            overflow: auto;
+            position: relative;
+        }
+
+        .builder-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid rgba(196, 30, 58, 0.3);
+        }
+
+        .builder-header h1 {
+            font-size: 24px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #c41e3a 0%, #ff6b6b 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+
+        .builder-header p {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .control-section {
+            margin-bottom: 30px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .control-section h2 {
+            font-size: 16px;
+            font-weight: 700;
+            color: #c41e3a;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-section h2::before {
+            content: '▸';
+            font-size: 14px;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 8px;
+        }
+
+        .control-group input[type="text"],
+        .control-group input[type="email"],
+        .control-group input[type="tel"],
+        .control-group input[type="url"],
+        .control-group textarea,
+        .control-group select {
+            width: 100%;
+            padding: 10px 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            color: #fff;
+            font-size: 13px;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s;
+        }
+
+        .control-group input[type="text"]:focus,
+        .control-group input[type="email"]:focus,
+        .control-group input[type="tel"]:focus,
+        .control-group input[type="url"]:focus,
+        .control-group textarea:focus,
+        .control-group select:focus {
+            outline: none;
+            border-color: #c41e3a;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .control-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .control-group input[type="color"] {
+            width: 100%;
+            height: 40px;
+            padding: 4px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .control-group input[type="range"] {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .control-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            background: #c41e3a;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .control-group input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            background: #c41e3a;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+        }
+
+        .range-value {
+            display: inline-block;
+            margin-left: 10px;
+            font-size: 12px;
+            color: #c41e3a;
+            font-weight: 600;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #c41e3a 0%, #ff6b6b 100%);
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(196, 30, 58, 0.3);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 10px 25px rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 12px;
+            margin-top: 5px;
+            width: auto;
+        }
+
+        .color-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .section-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .section-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .section-item-title {
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .section-item-controls {
+            display: flex;
+            gap: 5px;
+        }
+
+        .icon-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            border-radius: 4px;
+            color: #fff;
+            cursor: pointer;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .icon-btn:hover {
+            background: rgba(196, 30, 58, 0.3);
+        }
+
+        .tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 20px;
+            overflow-x: auto;
+        }
+
+        .tab {
+            padding: 10px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .tab.active {
+            background: linear-gradient(135deg, #c41e3a 0%, #ff6b6b 100%);
+            color: #fff;
+            border-color: transparent;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .preview-frame {
+            background: white;
+            min-height: 100%;
+            transform-origin: top left;
+        }
+
+        .three-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 6px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .three-option:hover {
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .three-option.selected {
+            border-color: #c41e3a;
+            background: rgba(196, 30, 58, 0.1);
+        }
+
+        .three-option input[type="radio"] {
+            accent-color: #c41e3a;
+        }
+
+        .three-option-label {
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .skill-entry {
+            display: grid;
+            grid-template-columns: 2fr 1fr auto;
+            gap: 8px;
+            margin-bottom: 8px;
+            align-items: center;
+        }
+
+        .skill-entry input {
+            padding: 8px;
+            font-size: 12px;
+        }
+
+        .background-options {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .bg-option {
+            padding: 30px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.3s;
+            text-align: center;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .bg-option.selected {
+            border-color: #c41e3a;
+            box-shadow: 0 0 15px rgba(196, 30, 58, 0.3);
+        }
+
+        .action-buttons {
+            position: sticky;
+            bottom: 0;
+            background: rgba(13, 18, 39, 0.98);
+            padding: 20px;
+            margin: -20px;
+            margin-top: 20px;
+            border-top: 2px solid rgba(196, 30, 58, 0.3);
+        }
+
+        .success-message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #4CAF50;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            z-index: 10000;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .collapsible-section {
+            margin-bottom: 10px;
+        }
+
+        .collapsible-header {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s;
+        }
+
+        .collapsible-header:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .collapsible-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+
+        .collapsible-content.open {
+            max-height: 2000px;
+            padding: 15px 0;
+        }
+
+        .toggle-icon {
+            transition: transform 0.3s;
+        }
+
+        .toggle-icon.open {
+            transform: rotate(90deg);
+        }
+    </style>
+</head>
+<body>
+    <div class="builder-container">
+        <!-- Controls Panel -->
+        <div class="controls-panel">
+            <div class="builder-header">
+                <h1>Resume Template Builder</h1>
+                <p>Customize every aspect of your resume</p>
+            </div>
+
+            <!-- Tabs -->
+            <div class="tabs">
+                <div class="tab active" data-tab="personal">Personal Info</div>
+                <div class="tab" data-tab="colors">Colors</div>
+                <div class="tab" data-tab="threejs">3D Effects</div>
+                <div class="tab" data-tab="background">Background</div>
+                <div class="tab" data-tab="sections">Sections</div>
+                <div class="tab" data-tab="skills">Skills</div>
+            </div>
+
+            <!-- Tab Contents -->
+            <div class="tab-content active" id="personal-tab">
+                <div class="control-section">
+                    <h2>Basic Information</h2>
+                    <div class="control-group">
+                        <label>Full Name</label>
+                        <input type="text" id="fullName" placeholder="Your Full Name">
+                    </div>
+                    <div class="control-group">
+                        <label>Professional Title</label>
+                        <input type="text" id="jobTitle" placeholder="e.g., Software Engineer">
+                    </div>
+                    <div class="control-group">
+                        <label>Email</label>
+                        <input type="email" id="email" placeholder="your.email@example.com">
+                    </div>
+                    <div class="control-group">
+                        <label>Phone</label>
+                        <input type="tel" id="phone" placeholder="(555) 123-4567">
+                    </div>
+                    <div class="control-group">
+                        <label>Location</label>
+                        <input type="text" id="location" placeholder="City, State">
+                    </div>
+                    <div class="control-group">
+                        <label>LinkedIn URL</label>
+                        <input type="url" id="linkedin" placeholder="https://linkedin.com/in/yourprofile">
+                    </div>
+                    <div class="control-group">
+                        <label>Portfolio/Website</label>
+                        <input type="url" id="website" placeholder="https://yourwebsite.com">
+                    </div>
+                </div>
+
+                <div class="control-section">
+                    <h2>Professional Summary</h2>
+                    <div class="control-group">
+                        <textarea id="summary" placeholder="Write a compelling summary about yourself..."></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-content" id="colors-tab">
+                <div class="control-section">
+                    <h2>Color Scheme</h2>
+                    <div class="color-grid">
+                        <div class="control-group">
+                            <label>Primary Accent</label>
+                            <input type="color" id="accentColor" value="#c41e3a">
+                        </div>
+                        <div class="control-group">
+                            <label>Secondary Accent</label>
+                            <input type="color" id="secondaryColor" value="#ff6b6b">
+                        </div>
+                        <div class="control-group">
+                            <label>Background Start</label>
+                            <input type="color" id="bgColorStart" value="#0d1227">
+                        </div>
+                        <div class="control-group">
+                            <label>Background End</label>
+                            <input type="color" id="bgColorEnd" value="#1a1f3a">
+                        </div>
+                        <div class="control-group">
+                            <label>Text Color</label>
+                            <input type="color" id="textColor" value="#333333">
+                        </div>
+                        <div class="control-group">
+                            <label>Heading Color</label>
+                            <input type="color" id="headingColor" value="#1a1f3a">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="control-section">
+                    <h2>Transparency</h2>
+                    <div class="control-group">
+                        <label>Resume Sheet Opacity <span class="range-value" id="sheetOpacityValue">100%</span></label>
+                        <input type="range" id="sheetOpacity" min="0" max="100" value="100">
+                    </div>
+                    <div class="control-group">
+                        <label>Background Opacity <span class="range-value" id="bgOpacityValue">100%</span></label>
+                        <input type="range" id="bgOpacity" min="0" max="100" value="100">
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-content" id="threejs-tab">
+                <div class="control-section">
+                    <h2>3D Visualization</h2>
+                    <div class="three-option selected" data-effect="none">
+                        <input type="radio" name="threeEffect" value="none" checked>
+                        <span class="three-option-label">None (Canvas 2D Only)</span>
+                    </div>
+                    <div class="three-option" data-effect="particles">
+                        <input type="radio" name="threeEffect" value="particles">
+                        <span class="three-option-label">Floating Particles</span>
+                    </div>
+                    <div class="three-option" data-effect="waves">
+                        <input type="radio" name="threeEffect" value="waves">
+                        <span class="three-option-label">Animated Waves</span>
+                    </div>
+                    <div class="three-option" data-effect="geometry">
+                        <input type="radio" name="threeEffect" value="geometry">
+                        <span class="three-option-label">Rotating Geometry</span>
+                    </div>
+                    <div class="three-option" data-effect="network">
+                        <input type="radio" name="threeEffect" value="network">
+                        <span class="three-option-label">Network Connections</span>
+                    </div>
+                    <div class="three-option" data-effect="galaxy">
+                        <input type="radio" name="threeEffect" value="galaxy">
+                        <span class="three-option-label">Galaxy Spiral</span>
+                    </div>
+                </div>
+
+                <div class="control-section">
+                    <h2>Effect Settings</h2>
+                    <div class="control-group">
+                        <label>Animation Speed <span class="range-value" id="animSpeedValue">50%</span></label>
+                        <input type="range" id="animSpeed" min="0" max="100" value="50">
+                    </div>
+                    <div class="control-group">
+                        <label>Particle Count <span class="range-value" id="particleCountValue">1000</span></label>
+                        <input type="range" id="particleCount" min="100" max="5000" value="1000" step="100">
+                    </div>
+                    <div class="control-group">
+                        <label>Effect Color</label>
+                        <input type="color" id="effectColor" value="#c41e3a">
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-content" id="background-tab">
+                <div class="control-section">
+                    <h2>Background Type</h2>
+                    <div class="background-options">
+                        <div class="bg-option selected" data-bg="gradient" style="background: linear-gradient(135deg, #0d1227 0%, #1a1f3a 100%);">
+                            Gradient
+                        </div>
+                        <div class="bg-option" data-bg="solid" style="background: #1a1f3a;">
+                            Solid Color
+                        </div>
+                        <div class="bg-option" data-bg="pattern" style="background: repeating-linear-gradient(45deg, #0d1227, #0d1227 10px, #1a1f3a 10px, #1a1f3a 20px);">
+                            Pattern
+                        </div>
+                        <div class="bg-option" data-bg="image" style="background: linear-gradient(rgba(13,18,39,0.8), rgba(13,18,39,0.8)), url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2240%22 height=%2240%22><rect width=%2240%22 height=%2240%22 fill=%22%231a1f3a%22/><circle cx=%2220%22 cy=%2220%22 r=%222%22 fill=%22%23c41e3a%22/></svg>');">
+                            Image
+                        </div>
+                    </div>
+                </div>
+
+                <div class="control-section" id="imageUploadSection" style="display: none;">
+                    <h2>Background Image</h2>
+                    <div class="control-group">
+                        <label>Upload Image</label>
+                        <input type="file" id="bgImageUpload" accept="image/*" style="color: #fff;">
+                    </div>
+                    <div class="control-group">
+                        <label>Image Overlay Opacity <span class="range-value" id="imgOverlayValue">80%</span></label>
+                        <input type="range" id="imgOverlay" min="0" max="100" value="80">
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-content" id="sections-tab">
+                <div class="control-section">
+                    <h2>Resume Sections</h2>
+                    <p style="font-size: 12px; color: rgba(255,255,255,0.6); margin-bottom: 15px;">
+                        Add, remove, and reorder sections for your resume
+                    </p>
+                    <div id="sectionsList">
+                        <!-- Sections will be dynamically added here -->
+                    </div>
+                    <button class="btn btn-secondary" id="addSectionBtn">+ Add New Section</button>
+                </div>
+            </div>
+
+            <div class="tab-content" id="skills-tab">
+                <div class="control-section">
+                    <h2>Technical Skills</h2>
+                    <p style="font-size: 12px; color: rgba(255,255,255,0.6); margin-bottom: 15px;">
+                        Add skills with proficiency levels (0-100)
+                    </p>
+                    <div id="skillsList">
+                        <!-- Skills will be dynamically added here -->
+                    </div>
+                    <button class="btn btn-secondary btn-small" id="addSkillBtn">+ Add Skill</button>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <button class="btn" id="saveConfigBtn">💾 Save Configuration</button>
+                <button class="btn btn-secondary" id="loadConfigBtn">📂 Load Configuration</button>
+                <button class="btn" id="generateBtn">⚡ Generate & Download HTML</button>
+            </div>
+        </div>
+
+        <!-- Preview Panel -->
+        <div class="preview-panel" id="previewPanel">
+            <iframe id="previewFrame" class="preview-frame" style="width: 100%; height: 100%; border: none;"></iframe>
+        </div>
+    </div>
+
+    <script>
+        // Configuration Object
+        const config = {
+            personal: {
+                fullName: 'Your Name',
+                jobTitle: 'Professional Title',
+                email: 'email@example.com',
+                phone: '(555) 123-4567',
+                location: 'City, State',
+                linkedin: '',
+                website: '',
+                summary: ''
+            },
+            colors: {
+                accent: '#c41e3a',
+                secondary: '#ff6b6b',
+                bgStart: '#0d1227',
+                bgEnd: '#1a1f3a',
+                text: '#333333',
+                heading: '#1a1f3a'
+            },
+            transparency: {
+                sheet: 100,
+                background: 100
+            },
+            threeJs: {
+                effect: 'none',
+                speed: 50,
+                particleCount: 1000,
+                color: '#c41e3a'
+            },
+            background: {
+                type: 'gradient',
+                image: null,
+                imageOverlay: 80
+            },
+            sections: [
+                { id: 1, title: 'Professional Summary', content: '', type: 'text' },
+                { id: 2, title: 'Experience', content: '', type: 'list' },
+                { id: 3, title: 'Education', content: '', type: 'list' },
+                { id: 4, title: 'Skills', content: '', type: 'skills' }
+            ],
+            skills: [
+                { name: 'JavaScript', level: 90 },
+                { name: 'HTML/CSS', level: 85 },
+                { name: 'React', level: 80 }
+            ]
+        };
+
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.tab + '-tab').classList.add('active');
+            });
+        });
+
+        // Three.js effect selection
+        document.querySelectorAll('.three-option').forEach(option => {
+            option.addEventListener('click', function() {
+                document.querySelectorAll('.three-option').forEach(o => o.classList.remove('selected'));
+                this.classList.add('selected');
+                this.querySelector('input').checked = true;
+                config.threeJs.effect = this.dataset.effect;
+                updatePreview();
+            });
+        });
+
+        // Background type selection
+        document.querySelectorAll('.bg-option').forEach(option => {
+            option.addEventListener('click', function() {
+                document.querySelectorAll('.bg-option').forEach(o => o.classList.remove('selected'));
+                this.classList.add('selected');
+                config.background.type = this.dataset.bg;
+
+                // Show/hide image upload section
+                if (this.dataset.bg === 'image') {
+                    document.getElementById('imageUploadSection').style.display = 'block';
+                } else {
+                    document.getElementById('imageUploadSection').style.display = 'none';
+                }
+
+                updatePreview();
+            });
+        });
+
+        // Range input value display
+        function setupRangeInput(inputId, valueId, suffix = '%') {
+            const input = document.getElementById(inputId);
+            const valueDisplay = document.getElementById(valueId);
+
+            input.addEventListener('input', function() {
+                valueDisplay.textContent = this.value + suffix;
+            });
+        }
+
+        setupRangeInput('sheetOpacity', 'sheetOpacityValue');
+        setupRangeInput('bgOpacity', 'bgOpacityValue');
+        setupRangeInput('animSpeed', 'animSpeedValue');
+        setupRangeInput('particleCount', 'particleCountValue', '');
+        setupRangeInput('imgOverlay', 'imgOverlayValue');
+
+        // Personal info inputs
+        ['fullName', 'jobTitle', 'email', 'phone', 'location', 'linkedin', 'website', 'summary'].forEach(field => {
+            const element = document.getElementById(field);
+            if (element) {
+                element.addEventListener('input', function() {
+                    config.personal[field] = this.value;
+                    updatePreview();
+                });
+            }
+        });
+
+        // Color inputs
+        ['accentColor', 'secondaryColor', 'bgColorStart', 'bgColorEnd', 'textColor', 'headingColor', 'effectColor'].forEach(colorId => {
+            const element = document.getElementById(colorId);
+            if (element) {
+                element.addEventListener('input', function() {
+                    const key = colorId.replace('Color', '').replace('bg', 'bg');
+                    if (colorId === 'accentColor') config.colors.accent = this.value;
+                    else if (colorId === 'secondaryColor') config.colors.secondary = this.value;
+                    else if (colorId === 'bgColorStart') config.colors.bgStart = this.value;
+                    else if (colorId === 'bgColorEnd') config.colors.bgEnd = this.value;
+                    else if (colorId === 'textColor') config.colors.text = this.value;
+                    else if (colorId === 'headingColor') config.colors.heading = this.value;
+                    else if (colorId === 'effectColor') config.threeJs.color = this.value;
+                    updatePreview();
+                });
+            }
+        });
+
+        // Transparency inputs
+        document.getElementById('sheetOpacity').addEventListener('input', function() {
+            config.transparency.sheet = this.value;
+            updatePreview();
+        });
+
+        document.getElementById('bgOpacity').addEventListener('input', function() {
+            config.transparency.background = this.value;
+            updatePreview();
+        });
+
+        // Three.js settings
+        document.getElementById('animSpeed').addEventListener('input', function() {
+            config.threeJs.speed = this.value;
+            updatePreview();
+        });
+
+        document.getElementById('particleCount').addEventListener('input', function() {
+            config.threeJs.particleCount = this.value;
+            updatePreview();
+        });
+
+        // Background image upload
+        document.getElementById('bgImageUpload').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    config.background.image = event.target.result;
+                    updatePreview();
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        document.getElementById('imgOverlay').addEventListener('input', function() {
+            config.background.imageOverlay = this.value;
+            updatePreview();
+        });
+
+        // Sections management
+        function renderSections() {
+            const container = document.getElementById('sectionsList');
+            container.innerHTML = '';
+
+            config.sections.forEach((section, index) => {
+                const sectionEl = document.createElement('div');
+                sectionEl.className = 'section-item';
+                sectionEl.innerHTML = `
+                    <div class="section-item-header">
+                        <span class="section-item-title">${section.title}</span>
+                        <div class="section-item-controls">
+                            ${index > 0 ? '<button class="icon-btn" onclick="moveSectionUp(' + index + ')">↑</button>' : ''}
+                            ${index < config.sections.length - 1 ? '<button class="icon-btn" onclick="moveSectionDown(' + index + ')">↓</button>' : ''}
+                            <button class="icon-btn" onclick="editSection(' + index + ')">✎</button>
+                            <button class="icon-btn" onclick="deleteSection(' + index + ')">✕</button>
+                        </div>
+                    </div>
+                    <div class="collapsible-content" id="section-content-${index}">
+                        <div class="control-group">
+                            <label>Section Title</label>
+                            <input type="text" value="${section.title}" onchange="updateSectionTitle(${index}, this.value)">
+                        </div>
+                        <div class="control-group">
+                            <label>Content</label>
+                            <textarea onchange="updateSectionContent(${index}, this.value)" placeholder="Enter content for this section...">${section.content}</textarea>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(sectionEl);
+            });
+        }
+
+        function addSection() {
+            const newSection = {
+                id: Date.now(),
+                title: 'New Section',
+                content: '',
+                type: 'text'
+            };
+            config.sections.push(newSection);
+            renderSections();
+            updatePreview();
+        }
+
+        function deleteSection(index) {
+            if (confirm('Are you sure you want to delete this section?')) {
+                config.sections.splice(index, 1);
+                renderSections();
+                updatePreview();
+            }
+        }
+
+        function moveSectionUp(index) {
+            if (index > 0) {
+                [config.sections[index], config.sections[index - 1]] = [config.sections[index - 1], config.sections[index]];
+                renderSections();
+                updatePreview();
+            }
+        }
+
+        function moveSectionDown(index) {
+            if (index < config.sections.length - 1) {
+                [config.sections[index], config.sections[index + 1]] = [config.sections[index + 1], config.sections[index]];
+                renderSections();
+                updatePreview();
+            }
+        }
+
+        function updateSectionTitle(index, value) {
+            config.sections[index].title = value;
+            renderSections();
+            updatePreview();
+        }
+
+        function updateSectionContent(index, value) {
+            config.sections[index].content = value;
+            updatePreview();
+        }
+
+        function editSection(index) {
+            const content = document.getElementById(`section-content-${index}`);
+            content.classList.toggle('open');
+        }
+
+        document.getElementById('addSectionBtn').addEventListener('click', addSection);
+
+        // Skills management
+        function renderSkills() {
+            const container = document.getElementById('skillsList');
+            container.innerHTML = '';
+
+            config.skills.forEach((skill, index) => {
+                const skillEl = document.createElement('div');
+                skillEl.className = 'skill-entry';
+                skillEl.innerHTML = `
+                    <input type="text" placeholder="Skill name" value="${skill.name}" onchange="updateSkillName(${index}, this.value)">
+                    <input type="number" min="0" max="100" placeholder="Level" value="${skill.level}" onchange="updateSkillLevel(${index}, this.value)">
+                    <button class="icon-btn" onclick="deleteSkill(${index})">✕</button>
+                `;
+                container.appendChild(skillEl);
+            });
+        }
+
+        function addSkill() {
+            config.skills.push({ name: '', level: 50 });
+            renderSkills();
+            updatePreview();
+        }
+
+        function deleteSkill(index) {
+            config.skills.splice(index, 1);
+            renderSkills();
+            updatePreview();
+        }
+
+        function updateSkillName(index, value) {
+            config.skills[index].name = value;
+            updatePreview();
+        }
+
+        function updateSkillLevel(index, value) {
+            config.skills[index].level = Math.min(100, Math.max(0, parseInt(value) || 0));
+            updatePreview();
+        }
+
+        document.getElementById('addSkillBtn').addEventListener('click', addSkill);
+
+        // Preview update
+        function updatePreview() {
+            const iframe = document.getElementById('previewFrame');
+            const html = generateHTML();
+
+            iframe.srcdoc = html;
+        }
+
+        // Generate HTML
+        function generateHTML() {
+            return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${config.personal.fullName} - Resume</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: ${getBackgroundStyle()};
+            color: ${config.colors.text};
+            line-height: 1.6;
+            padding: 40px 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+        #threeCanvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+        .resume-container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, ${config.transparency.sheet / 100});
+            padding: 60px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            position: relative;
+            z-index: 1;
+            border-radius: 8px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 30px;
+            border-bottom: 3px solid ${config.colors.accent};
+        }
+        h1 {
+            font-size: 48px;
+            font-weight: 800;
+            color: ${config.colors.heading};
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, ${config.colors.accent} 0%, ${config.colors.secondary} 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .job-title {
+            font-size: 20px;
+            color: ${config.colors.accent};
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+        .contact-info {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            font-size: 14px;
+            color: #666;
+        }
+        .contact-info a {
+            color: ${config.colors.accent};
+            text-decoration: none;
+        }
+        .section {
+            margin-bottom: 35px;
+        }
+        .section h2 {
+            font-size: 24px;
+            color: ${config.colors.heading};
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid ${config.colors.accent};
+        }
+        .skills-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+        .skill-item {
+            margin-bottom: 10px;
+        }
+        .skill-name {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: ${config.colors.heading};
+        }
+        .skill-bar {
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .skill-level {
+            height: 100%;
+            background: linear-gradient(90deg, ${config.colors.accent}, ${config.colors.secondary});
+            border-radius: 4px;
+            transition: width 1s ease-out;
+        }
+        @media print {
+            body { padding: 0; background: white; }
+            .resume-container { box-shadow: none; padding: 40px; }
+            #threeCanvas { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="threeCanvas"></canvas>
+    <div class="resume-container">
+        <div class="header">
+            <h1>${config.personal.fullName}</h1>
+            <div class="job-title">${config.personal.jobTitle}</div>
+            <div class="contact-info">
+                ${config.personal.email ? `<span>✉ ${config.personal.email}</span>` : ''}
+                ${config.personal.phone ? `<span>📞 ${config.personal.phone}</span>` : ''}
+                ${config.personal.location ? `<span>📍 ${config.personal.location}</span>` : ''}
+                ${config.personal.linkedin ? `<span><a href="${config.personal.linkedin}" target="_blank">LinkedIn</a></span>` : ''}
+                ${config.personal.website ? `<span><a href="${config.personal.website}" target="_blank">Website</a></span>` : ''}
+            </div>
+        </div>
+
+        ${config.personal.summary ? `
+        <div class="section">
+            <h2>Professional Summary</h2>
+            <p>${config.personal.summary}</p>
+        </div>
+        ` : ''}
+
+        ${config.sections.map(section => `
+        <div class="section">
+            <h2>${section.title}</h2>
+            <p>${section.content || 'Content coming soon...'}</p>
+        </div>
+        `).join('')}
+
+        ${config.skills.length > 0 ? `
+        <div class="section">
+            <h2>Technical Skills</h2>
+            <div class="skills-grid">
+                ${config.skills.map(skill => `
+                <div class="skill-item">
+                    <div class="skill-name">${skill.name}</div>
+                    <div class="skill-bar">
+                        <div class="skill-level" style="width: ${skill.level}%"></div>
+                    </div>
+                </div>
+                `).join('')}
+            </div>
+        </div>
+        ` : ''}
+    </div>
+
+    <script>
+        ${getThreeJsCode()}
+    </script>
+</body>
+</html>`;
+        }
+
+        function getBackgroundStyle() {
+            const opacity = config.transparency.background / 100;
+
+            switch(config.background.type) {
+                case 'solid':
+                    return `rgba(${hexToRgb(config.colors.bgStart)}, ${opacity})`;
+                case 'gradient':
+                    return `linear-gradient(135deg, ${config.colors.bgStart} 0%, ${config.colors.bgEnd} 100%)`;
+                case 'pattern':
+                    return `repeating-linear-gradient(45deg, ${config.colors.bgStart}, ${config.colors.bgStart} 10px, ${config.colors.bgEnd} 10px, ${config.colors.bgEnd} 20px)`;
+                case 'image':
+                    if (config.background.image) {
+                        const overlayOpacity = config.background.imageOverlay / 100;
+                        return `linear-gradient(rgba(${hexToRgb(config.colors.bgStart)}, ${overlayOpacity}), rgba(${hexToRgb(config.colors.bgEnd)}, ${overlayOpacity})), url(${config.background.image}) center/cover`;
+                    }
+                    return `linear-gradient(135deg, ${config.colors.bgStart} 0%, ${config.colors.bgEnd} 100%)`;
+                default:
+                    return `linear-gradient(135deg, ${config.colors.bgStart} 0%, ${config.colors.bgEnd} 100%)`;
+            }
+        }
+
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : '0, 0, 0';
+        }
+
+        function getThreeJsCode() {
+            if (config.threeJs.effect === 'none') {
+                return '// No Three.js effect selected';
+            }
+
+            const baseCode = `
+                const canvas = document.getElementById('threeCanvas');
+                const scene = new THREE.Scene();
+                const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+                const renderer = new THREE.WebGLRenderer({ canvas, alpha: true });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                camera.position.z = 5;
+
+                const speed = ${config.threeJs.speed / 50};
+                const color = new THREE.Color('${config.threeJs.color}');
+            `;
+
+            let effectCode = '';
+
+            switch(config.threeJs.effect) {
+                case 'particles':
+                    effectCode = `
+                        const geometry = new THREE.BufferGeometry();
+                        const positions = [];
+                        for (let i = 0; i < ${config.threeJs.particleCount}; i++) {
+                            positions.push((Math.random() - 0.5) * 20);
+                            positions.push((Math.random() - 0.5) * 20);
+                            positions.push((Math.random() - 0.5) * 20);
+                        }
+                        geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+                        const material = new THREE.PointsMaterial({ color: color, size: 0.05 });
+                        const particles = new THREE.Points(geometry, material);
+                        scene.add(particles);
+
+                        function animate() {
+                            requestAnimationFrame(animate);
+                            particles.rotation.y += 0.001 * speed;
+                            renderer.render(scene, camera);
+                        }
+                        animate();
+                    `;
+                    break;
+
+                case 'waves':
+                    effectCode = `
+                        const geometry = new THREE.PlaneGeometry(20, 20, 50, 50);
+                        const material = new THREE.MeshBasicMaterial({ color: color, wireframe: true });
+                        const plane = new THREE.Mesh(geometry, material);
+                        plane.rotation.x = -Math.PI / 2;
+                        scene.add(plane);
+
+                        let time = 0;
+                        function animate() {
+                            requestAnimationFrame(animate);
+                            time += 0.01 * speed;
+                            const positions = geometry.attributes.position.array;
+                            for (let i = 0; i < positions.length; i += 3) {
+                                const x = positions[i];
+                                const y = positions[i + 1];
+                                positions[i + 2] = Math.sin(x * 0.5 + time) * Math.cos(y * 0.5 + time) * 0.5;
+                            }
+                            geometry.attributes.position.needsUpdate = true;
+                            renderer.render(scene, camera);
+                        }
+                        animate();
+                    `;
+                    break;
+
+                case 'geometry':
+                    effectCode = `
+                        const geometry = new THREE.IcosahedronGeometry(2, 1);
+                        const material = new THREE.MeshBasicMaterial({ color: color, wireframe: true });
+                        const mesh = new THREE.Mesh(geometry, material);
+                        scene.add(mesh);
+
+                        function animate() {
+                            requestAnimationFrame(animate);
+                            mesh.rotation.x += 0.01 * speed;
+                            mesh.rotation.y += 0.01 * speed;
+                            renderer.render(scene, camera);
+                        }
+                        animate();
+                    `;
+                    break;
+
+                case 'network':
+                    effectCode = `
+                        const nodes = [];
+                        const nodeGeometry = new THREE.SphereGeometry(0.05, 8, 8);
+                        const nodeMaterial = new THREE.MeshBasicMaterial({ color: color });
+
+                        for (let i = 0; i < 50; i++) {
+                            const node = new THREE.Mesh(nodeGeometry, nodeMaterial);
+                            node.position.set(
+                                (Math.random() - 0.5) * 10,
+                                (Math.random() - 0.5) * 10,
+                                (Math.random() - 0.5) * 10
+                            );
+                            nodes.push(node);
+                            scene.add(node);
+                        }
+
+                        const lineMaterial = new THREE.LineBasicMaterial({ color: color, opacity: 0.3, transparent: true });
+
+                        function animate() {
+                            requestAnimationFrame(animate);
+
+                            nodes.forEach(node => {
+                                node.position.y += Math.sin(Date.now() * 0.001 * speed) * 0.01;
+                            });
+
+                            renderer.render(scene, camera);
+                        }
+                        animate();
+                    `;
+                    break;
+
+                case 'galaxy':
+                    effectCode = `
+                        const geometry = new THREE.BufferGeometry();
+                        const positions = [];
+                        const colors = [];
+
+                        for (let i = 0; i < ${config.threeJs.particleCount}; i++) {
+                            const radius = Math.random() * 5;
+                            const spinAngle = radius * 5;
+                            const branchAngle = (i % 3) * ((Math.PI * 2) / 3);
+
+                            positions.push(
+                                Math.cos(branchAngle + spinAngle) * radius,
+                                (Math.random() - 0.5) * 0.5,
+                                Math.sin(branchAngle + spinAngle) * radius
+                            );
+
+                            colors.push(color.r, color.g, color.b);
+                        }
+
+                        geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+                        geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+
+                        const material = new THREE.PointsMaterial({ size: 0.05, vertexColors: true });
+                        const galaxy = new THREE.Points(geometry, material);
+                        scene.add(galaxy);
+
+                        function animate() {
+                            requestAnimationFrame(animate);
+                            galaxy.rotation.y += 0.001 * speed;
+                            renderer.render(scene, camera);
+                        }
+                        animate();
+                    `;
+                    break;
+            }
+
+            return baseCode + effectCode + `
+                window.addEventListener('resize', () => {
+                    camera.aspect = window.innerWidth / window.innerHeight;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                });
+            `;
+        }
+
+        // Save/Load configuration
+        document.getElementById('saveConfigBtn').addEventListener('click', () => {
+            localStorage.setItem('resumeConfig', JSON.stringify(config));
+            const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'resume-config.json';
+            a.click();
+            showMessage('Configuration saved!');
+        });
+
+        document.getElementById('loadConfigBtn').addEventListener('click', () => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const loadedConfig = JSON.parse(event.target.result);
+                        Object.assign(config, loadedConfig);
+                        loadConfigToUI();
+                        updatePreview();
+                        showMessage('Configuration loaded!');
+                    } catch (error) {
+                        alert('Error loading configuration file');
+                    }
+                };
+                reader.readAsText(file);
+            };
+            input.click();
+        });
+
+        function loadConfigToUI() {
+            document.getElementById('fullName').value = config.personal.fullName;
+            document.getElementById('jobTitle').value = config.personal.jobTitle;
+            document.getElementById('email').value = config.personal.email;
+            document.getElementById('phone').value = config.personal.phone;
+            document.getElementById('location').value = config.personal.location;
+            document.getElementById('linkedin').value = config.personal.linkedin;
+            document.getElementById('website').value = config.personal.website;
+            document.getElementById('summary').value = config.personal.summary;
+
+            document.getElementById('accentColor').value = config.colors.accent;
+            document.getElementById('secondaryColor').value = config.colors.secondary;
+            document.getElementById('bgColorStart').value = config.colors.bgStart;
+            document.getElementById('bgColorEnd').value = config.colors.bgEnd;
+            document.getElementById('textColor').value = config.colors.text;
+            document.getElementById('headingColor').value = config.colors.heading;
+
+            document.getElementById('sheetOpacity').value = config.transparency.sheet;
+            document.getElementById('bgOpacity').value = config.transparency.background;
+
+            renderSections();
+            renderSkills();
+        }
+
+        // Generate and download HTML
+        document.getElementById('generateBtn').addEventListener('click', () => {
+            const html = generateHTML();
+            const blob = new Blob([html], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${config.personal.fullName.replace(/\s+/g, '-')}-Resume.html`;
+            a.click();
+            showMessage('Resume generated and downloaded!');
+        });
+
+        function showMessage(text) {
+            const msg = document.createElement('div');
+            msg.className = 'success-message';
+            msg.textContent = text;
+            document.body.appendChild(msg);
+            setTimeout(() => msg.remove(), 3000);
+        }
+
+        // Initialize
+        renderSections();
+        renderSkills();
+        updatePreview();
+
+        // Load saved config if exists
+        const saved = localStorage.getItem('resumeConfig');
+        if (saved) {
+            try {
+                Object.assign(config, JSON.parse(saved));
+                loadConfigToUI();
+            } catch (e) {
+                console.log('No saved config found');
+            }
+        }
+    </script>
+</body>
+</html>
