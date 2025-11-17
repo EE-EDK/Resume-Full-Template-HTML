@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:;">
     <title>Advanced Resume Template Builder</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -676,6 +677,57 @@
     </div>
 
     <script>
+        // Utility Functions
+
+        // HTML Escaping to prevent XSS
+        function escapeHtml(unsafe) {
+            if (unsafe === null || unsafe === undefined) return '';
+            return String(unsafe)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        // Debounce function for performance
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        // Sanitize filename
+        function sanitizeFilename(filename) {
+            return filename
+                .replace(/[^a-z0-9]/gi, '-')
+                .replace(/-+/g, '-')
+                .replace(/^-|-$/g, '')
+                .toLowerCase() || 'resume';
+        }
+
+        // Validate email
+        function isValidEmail(email) {
+            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return re.test(email);
+        }
+
+        // Validate URL
+        function isValidUrl(url) {
+            try {
+                new URL(url);
+                return true;
+            } catch {
+                return false;
+            }
+        }
+
         // Configuration Object
         const config = {
             personal: {
@@ -764,10 +816,18 @@
             });
         });
 
-        // Range input value display
+        // Range input value display with null checks
         function setupRangeInput(inputId, valueId, suffix = '%') {
             const input = document.getElementById(inputId);
             const valueDisplay = document.getElementById(valueId);
+
+            if (!input || !valueDisplay) {
+                console.warn(`Range input elements not found: ${inputId}, ${valueId}`);
+                return;
+            }
+
+            // Initialize display value
+            valueDisplay.textContent = input.value + suffix;
 
             input.addEventListener('input', function() {
                 valueDisplay.textContent = this.value + suffix;
@@ -780,13 +840,15 @@
         setupRangeInput('particleCount', 'particleCountValue', '');
         setupRangeInput('imgOverlay', 'imgOverlayValue');
 
-        // Personal info inputs
+        // Personal info inputs with debouncing
+        const debouncedUpdatePreview = debounce(updatePreview, 300);
+
         ['fullName', 'jobTitle', 'email', 'phone', 'location', 'linkedin', 'website', 'summary'].forEach(field => {
             const element = document.getElementById(field);
             if (element) {
                 element.addEventListener('input', function() {
                     config.personal[field] = this.value;
-                    updatePreview();
+                    debouncedUpdatePreview();
                 });
             }
         });
@@ -831,14 +893,29 @@
             updatePreview();
         });
 
-        // Background image upload
+        // Background image upload with error handling
         document.getElementById('bgImageUpload').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) {
+                // Validate file type
+                if (!file.type.startsWith('image/')) {
+                    alert('Please select a valid image file');
+                    return;
+                }
+
+                // Validate file size (max 5MB)
+                if (file.size > 5 * 1024 * 1024) {
+                    alert('Image size must be less than 5MB');
+                    return;
+                }
+
                 const reader = new FileReader();
                 reader.onload = function(event) {
                     config.background.image = event.target.result;
                     updatePreview();
+                };
+                reader.onerror = function() {
+                    alert('Error reading file. Please try again.');
                 };
                 reader.readAsDataURL(file);
             }
@@ -857,27 +934,89 @@
             config.sections.forEach((section, index) => {
                 const sectionEl = document.createElement('div');
                 sectionEl.className = 'section-item';
-                sectionEl.innerHTML = `
-                    <div class="section-item-header">
-                        <span class="section-item-title">${section.title}</span>
-                        <div class="section-item-controls">
-                            ${index > 0 ? '<button class="icon-btn" onclick="moveSectionUp(' + index + ')">↑</button>' : ''}
-                            ${index < config.sections.length - 1 ? '<button class="icon-btn" onclick="moveSectionDown(' + index + ')">↓</button>' : ''}
-                            <button class="icon-btn" onclick="editSection(' + index + ')">✎</button>
-                            <button class="icon-btn" onclick="deleteSection(' + index + ')">✕</button>
-                        </div>
-                    </div>
-                    <div class="collapsible-content" id="section-content-${index}">
-                        <div class="control-group">
-                            <label>Section Title</label>
-                            <input type="text" value="${section.title}" onchange="updateSectionTitle(${index}, this.value)">
-                        </div>
-                        <div class="control-group">
-                            <label>Content</label>
-                            <textarea onchange="updateSectionContent(${index}, this.value)" placeholder="Enter content for this section...">${section.content}</textarea>
-                        </div>
-                    </div>
-                `;
+
+                // Create section header
+                const headerDiv = document.createElement('div');
+                headerDiv.className = 'section-item-header';
+
+                const titleSpan = document.createElement('span');
+                titleSpan.className = 'section-item-title';
+                titleSpan.textContent = section.title;
+
+                const controlsDiv = document.createElement('div');
+                controlsDiv.className = 'section-item-controls';
+
+                // Move up button
+                if (index > 0) {
+                    const upBtn = document.createElement('button');
+                    upBtn.className = 'icon-btn';
+                    upBtn.textContent = '↑';
+                    upBtn.setAttribute('aria-label', 'Move section up');
+                    upBtn.addEventListener('click', () => moveSectionUp(index));
+                    controlsDiv.appendChild(upBtn);
+                }
+
+                // Move down button
+                if (index < config.sections.length - 1) {
+                    const downBtn = document.createElement('button');
+                    downBtn.className = 'icon-btn';
+                    downBtn.textContent = '↓';
+                    downBtn.setAttribute('aria-label', 'Move section down');
+                    downBtn.addEventListener('click', () => moveSectionDown(index));
+                    controlsDiv.appendChild(downBtn);
+                }
+
+                // Edit button
+                const editBtn = document.createElement('button');
+                editBtn.className = 'icon-btn';
+                editBtn.textContent = '✎';
+                editBtn.setAttribute('aria-label', 'Edit section');
+                editBtn.addEventListener('click', () => editSection(index));
+                controlsDiv.appendChild(editBtn);
+
+                // Delete button
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'icon-btn';
+                deleteBtn.textContent = '✕';
+                deleteBtn.setAttribute('aria-label', 'Delete section');
+                deleteBtn.addEventListener('click', () => deleteSection(index));
+                controlsDiv.appendChild(deleteBtn);
+
+                headerDiv.appendChild(titleSpan);
+                headerDiv.appendChild(controlsDiv);
+
+                // Create collapsible content
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'collapsible-content';
+                contentDiv.id = `section-content-${index}`;
+
+                const titleGroup = document.createElement('div');
+                titleGroup.className = 'control-group';
+                const titleLabel = document.createElement('label');
+                titleLabel.textContent = 'Section Title';
+                const titleInput = document.createElement('input');
+                titleInput.type = 'text';
+                titleInput.value = section.title;
+                titleInput.addEventListener('change', (e) => updateSectionTitle(index, e.target.value));
+                titleGroup.appendChild(titleLabel);
+                titleGroup.appendChild(titleInput);
+
+                const contentGroup = document.createElement('div');
+                contentGroup.className = 'control-group';
+                const contentLabel = document.createElement('label');
+                contentLabel.textContent = 'Content';
+                const contentTextarea = document.createElement('textarea');
+                contentTextarea.placeholder = 'Enter content for this section...';
+                contentTextarea.value = section.content;
+                contentTextarea.addEventListener('change', (e) => updateSectionContent(index, e.target.value));
+                contentGroup.appendChild(contentLabel);
+                contentGroup.appendChild(contentTextarea);
+
+                contentDiv.appendChild(titleGroup);
+                contentDiv.appendChild(contentGroup);
+
+                sectionEl.appendChild(headerDiv);
+                sectionEl.appendChild(contentDiv);
                 container.appendChild(sectionEl);
             });
         }
@@ -944,11 +1083,30 @@
             config.skills.forEach((skill, index) => {
                 const skillEl = document.createElement('div');
                 skillEl.className = 'skill-entry';
-                skillEl.innerHTML = `
-                    <input type="text" placeholder="Skill name" value="${skill.name}" onchange="updateSkillName(${index}, this.value)">
-                    <input type="number" min="0" max="100" placeholder="Level" value="${skill.level}" onchange="updateSkillLevel(${index}, this.value)">
-                    <button class="icon-btn" onclick="deleteSkill(${index})">✕</button>
-                `;
+
+                const nameInput = document.createElement('input');
+                nameInput.type = 'text';
+                nameInput.placeholder = 'Skill name';
+                nameInput.value = skill.name;
+                nameInput.addEventListener('change', (e) => updateSkillName(index, e.target.value));
+
+                const levelInput = document.createElement('input');
+                levelInput.type = 'number';
+                levelInput.min = '0';
+                levelInput.max = '100';
+                levelInput.placeholder = 'Level';
+                levelInput.value = skill.level;
+                levelInput.addEventListener('change', (e) => updateSkillLevel(index, e.target.value));
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'icon-btn';
+                deleteBtn.textContent = '✕';
+                deleteBtn.setAttribute('aria-label', `Delete skill ${skill.name || 'entry'}`);
+                deleteBtn.addEventListener('click', () => deleteSkill(index));
+
+                skillEl.appendChild(nameInput);
+                skillEl.appendChild(levelInput);
+                skillEl.appendChild(deleteBtn);
                 container.appendChild(skillEl);
             });
         }
@@ -985,14 +1143,14 @@
             iframe.srcdoc = html;
         }
 
-        // Generate HTML
+        // Generate HTML with proper escaping
         function generateHTML() {
             return `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${config.personal.fullName} - Resume</title>
+    <title>${escapeHtml(config.personal.fullName)} - Resume</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
@@ -1096,28 +1254,28 @@
     <canvas id="threeCanvas"></canvas>
     <div class="resume-container">
         <div class="header">
-            <h1>${config.personal.fullName}</h1>
-            <div class="job-title">${config.personal.jobTitle}</div>
+            <h1>${escapeHtml(config.personal.fullName)}</h1>
+            <div class="job-title">${escapeHtml(config.personal.jobTitle)}</div>
             <div class="contact-info">
-                ${config.personal.email ? `<span>✉ ${config.personal.email}</span>` : ''}
-                ${config.personal.phone ? `<span>📞 ${config.personal.phone}</span>` : ''}
-                ${config.personal.location ? `<span>📍 ${config.personal.location}</span>` : ''}
-                ${config.personal.linkedin ? `<span><a href="${config.personal.linkedin}" target="_blank">LinkedIn</a></span>` : ''}
-                ${config.personal.website ? `<span><a href="${config.personal.website}" target="_blank">Website</a></span>` : ''}
+                ${config.personal.email ? `<span>✉ ${escapeHtml(config.personal.email)}</span>` : ''}
+                ${config.personal.phone ? `<span>📞 ${escapeHtml(config.personal.phone)}</span>` : ''}
+                ${config.personal.location ? `<span>📍 ${escapeHtml(config.personal.location)}</span>` : ''}
+                ${config.personal.linkedin && isValidUrl(config.personal.linkedin) ? `<span><a href="${escapeHtml(config.personal.linkedin)}" target="_blank" rel="noopener noreferrer">LinkedIn</a></span>` : ''}
+                ${config.personal.website && isValidUrl(config.personal.website) ? `<span><a href="${escapeHtml(config.personal.website)}" target="_blank" rel="noopener noreferrer">Website</a></span>` : ''}
             </div>
         </div>
 
         ${config.personal.summary ? `
         <div class="section">
             <h2>Professional Summary</h2>
-            <p>${config.personal.summary}</p>
+            <p>${escapeHtml(config.personal.summary)}</p>
         </div>
         ` : ''}
 
         ${config.sections.map(section => `
         <div class="section">
-            <h2>${section.title}</h2>
-            <p>${section.content || 'Content coming soon...'}</p>
+            <h2>${escapeHtml(section.title)}</h2>
+            <p>${escapeHtml(section.content) || 'Content coming soon...'}</p>
         </div>
         `).join('')}
 
@@ -1127,9 +1285,9 @@
             <div class="skills-grid">
                 ${config.skills.map(skill => `
                 <div class="skill-item">
-                    <div class="skill-name">${skill.name}</div>
+                    <div class="skill-name">${escapeHtml(skill.name)}</div>
                     <div class="skill-bar">
-                        <div class="skill-level" style="width: ${skill.level}%"></div>
+                        <div class="skill-level" style="width: ${Math.min(100, Math.max(0, parseInt(skill.level) || 0))}%"></div>
                     </div>
                 </div>
                 `).join('')}
@@ -1334,16 +1492,31 @@
             `;
         }
 
-        // Save/Load configuration
+        // Save/Load configuration with error handling
         document.getElementById('saveConfigBtn').addEventListener('click', () => {
-            localStorage.setItem('resumeConfig', JSON.stringify(config));
-            const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'resume-config.json';
-            a.click();
-            showMessage('Configuration saved!');
+            try {
+                // Save to localStorage with error handling
+                try {
+                    localStorage.setItem('resumeConfig', JSON.stringify(config));
+                } catch (storageError) {
+                    console.warn('Could not save to localStorage:', storageError);
+                }
+
+                // Download as file
+                const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'resume-config.json';
+                a.click();
+
+                // Clean up blob URL to prevent memory leak
+                setTimeout(() => URL.revokeObjectURL(url), 100);
+
+                showMessage('Configuration saved!');
+            } catch (error) {
+                alert('Error saving configuration: ' + error.message);
+            }
         });
 
         document.getElementById('loadConfigBtn').addEventListener('click', () => {
@@ -1352,17 +1525,46 @@
             input.accept = '.json';
             input.onchange = (e) => {
                 const file = e.target.files[0];
+                if (!file) return;
+
+                // Validate file size (max 1MB for config)
+                if (file.size > 1024 * 1024) {
+                    alert('Configuration file is too large (max 1MB)');
+                    return;
+                }
+
                 const reader = new FileReader();
                 reader.onload = (event) => {
                     try {
                         const loadedConfig = JSON.parse(event.target.result);
-                        Object.assign(config, loadedConfig);
+
+                        // Validate loaded config structure
+                        if (!loadedConfig.personal || !loadedConfig.colors) {
+                            throw new Error('Invalid configuration file format');
+                        }
+
+                        // Deep merge to preserve structure
+                        Object.keys(loadedConfig).forEach(key => {
+                            if (config.hasOwnProperty(key)) {
+                                if (Array.isArray(loadedConfig[key])) {
+                                    config[key] = [...loadedConfig[key]];
+                                } else if (typeof loadedConfig[key] === 'object') {
+                                    config[key] = { ...config[key], ...loadedConfig[key] };
+                                } else {
+                                    config[key] = loadedConfig[key];
+                                }
+                            }
+                        });
+
                         loadConfigToUI();
                         updatePreview();
                         showMessage('Configuration loaded!');
                     } catch (error) {
-                        alert('Error loading configuration file');
+                        alert('Error loading configuration: ' + error.message);
                     }
+                };
+                reader.onerror = () => {
+                    alert('Error reading file. Please try again.');
                 };
                 reader.readAsText(file);
             };
@@ -1393,16 +1595,28 @@
             renderSkills();
         }
 
-        // Generate and download HTML
+        // Generate and download HTML with proper filename sanitization
         document.getElementById('generateBtn').addEventListener('click', () => {
-            const html = generateHTML();
-            const blob = new Blob([html], { type: 'text/html' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${config.personal.fullName.replace(/\s+/g, '-')}-Resume.html`;
-            a.click();
-            showMessage('Resume generated and downloaded!');
+            try {
+                const html = generateHTML();
+                const blob = new Blob([html], { type: 'text/html' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+
+                // Sanitize filename to prevent issues
+                const safeName = sanitizeFilename(config.personal.fullName);
+                a.download = `${safeName}-resume.html`;
+
+                a.click();
+
+                // Clean up blob URL to prevent memory leak
+                setTimeout(() => URL.revokeObjectURL(url), 100);
+
+                showMessage('Resume generated and downloaded!');
+            } catch (error) {
+                alert('Error generating resume: ' + error.message);
+            }
         });
 
         function showMessage(text) {
@@ -1418,15 +1632,34 @@
         renderSkills();
         updatePreview();
 
-        // Load saved config if exists
-        const saved = localStorage.getItem('resumeConfig');
-        if (saved) {
-            try {
-                Object.assign(config, JSON.parse(saved));
-                loadConfigToUI();
-            } catch (e) {
-                console.log('No saved config found');
+        // Load saved config if exists with proper error handling
+        try {
+            const saved = localStorage.getItem('resumeConfig');
+            if (saved) {
+                const savedConfig = JSON.parse(saved);
+
+                // Validate structure before loading
+                if (savedConfig && typeof savedConfig === 'object') {
+                    // Deep merge saved config
+                    Object.keys(savedConfig).forEach(key => {
+                        if (config.hasOwnProperty(key)) {
+                            if (Array.isArray(savedConfig[key])) {
+                                config[key] = [...savedConfig[key]];
+                            } else if (typeof savedConfig[key] === 'object' && savedConfig[key] !== null) {
+                                config[key] = { ...config[key], ...savedConfig[key] };
+                            } else {
+                                config[key] = savedConfig[key];
+                            }
+                        }
+                    });
+
+                    loadConfigToUI();
+                    console.log('Previous configuration loaded from localStorage');
+                }
             }
+        } catch (e) {
+            console.warn('Could not load saved configuration:', e.message);
+            // Continue with default config - not a critical error
         }
     </script>
 </body>
