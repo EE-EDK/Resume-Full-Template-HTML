@@ -66,10 +66,16 @@ Choose from 6 stunning 3D effects:
 
 ## Documentation
 
-- **Template Builder Guide**: See [TEMPLATE-BUILDER-GUIDE.md](TEMPLATE-BUILDER-GUIDE.md) for complete documentation
-- Detailed feature explanations
-- Tips and best practices
-- Troubleshooting guide
+### Current Documentation
+- This README provides quick start and overview information
+
+### Archived Documentation
+Historical project documentation has been archived in `archive/docs/`:
+- **[Template Builder Guide](archive/docs/TEMPLATE-BUILDER-GUIDE.md)** - Complete user guide
+- **[Code Review Report](archive/docs/CODE-REVIEW-REPORT.md)** - Code quality analysis
+- **[Validation Success](archive/docs/VALIDATION-SUCCESS.md)** - Validation results
+- **[Test Report](archive/docs/TEST-REPORT.md)** - Testing documentation
+- **[Fixes Applied](archive/docs/FIXES-APPLIED.md)** - Bug fixes and improvements
 
 ## File Structure
 
@@ -77,9 +83,15 @@ Choose from 6 stunning 3D effects:
 Resume-Full-Template-HTML/
 ├── index.html                    # Original resume template
 ├── template-builder.html         # Advanced resume builder tool
-├── TEMPLATE-BUILDER-GUIDE.md    # Complete user guide
 ├── README.md                     # This file
-└── KCNSC-logo.jpg               # Sample logo image
+├── KCNSC-logo.jpg               # Sample logo image
+└── archive/
+    └── docs/                     # Archived documentation
+        ├── TEMPLATE-BUILDER-GUIDE.md
+        ├── CODE-REVIEW-REPORT.md
+        ├── VALIDATION-SUCCESS.md
+        ├── TEST-REPORT.md
+        └── FIXES-APPLIED.md
 ```
 
 ## Technologies Used
@@ -169,7 +181,7 @@ Feel free to fork, modify, and submit pull requests!
 ## Support
 
 For questions or issues:
-- Check the [Template Builder Guide](TEMPLATE-BUILDER-GUIDE.md)
+- Check the [Template Builder Guide](archive/docs/TEMPLATE-BUILDER-GUIDE.md)
 - Review the code comments
 - Open an issue in the repository
 
