@@ -1,6 +1,7 @@
 # Resume Full Template - HTML
 
 https://ee-edk.github.io/Resume-Full-Template-HTML/
+
 A professional, modern resume template builder with advanced customization capabilities and stunning visual effects. Create beautiful, interactive resumes with 3D backgrounds, custom color schemes, and dynamic content management.
 
 ## Features
