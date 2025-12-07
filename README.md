@@ -4,7 +4,7 @@ A professional, modern resume template builder with advanced customization capab
 
 ## Features
 
-### Advanced Template Builder (`template-builder.html`)
+### Advanced Template Builder (`index.html`)
 
 A powerful interactive tool to create fully customized resumes with:
 
