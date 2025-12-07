@@ -52,7 +52,7 @@ Choose from 6 stunning 3D effects:
 
 ## Quick Start
 
-1. Open `template-builder.html` in a web browser
+1. Open `index.html` in a web browser
 2. Fill in your personal information in the "Personal Info" tab
 3. Customize colors in the "Colors" tab
 4. Choose a 3D effect in the "3D Effects" tab
@@ -67,7 +67,7 @@ Choose from 6 stunning 3D effects:
 
 ### Getting Started
 
-Open `template-builder.html` in your web browser. You'll see a split-screen interface:
+Open `index.html` in your web browser. You'll see a split-screen interface:
 - **Left Panel**: Configuration controls with tabbed sections
 - **Right Panel**: Live preview of your resume
 
@@ -227,7 +227,7 @@ Keep animation speed moderate (30-60%) for best visual effect without distractio
 
 ```
 Resume-Full-Template-HTML/
-├── template-builder.html      # Resume builder tool
+├── index.html                 # Resume builder tool
 ├── README.md                  # This file
 └── archive/                   # Archived development documentation
     └── DEVELOPMENT-HISTORY.md
