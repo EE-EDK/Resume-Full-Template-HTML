@@ -452,10 +452,22 @@
             transform: rotate(90deg);
         }
 
-        /* Fix dropdown option text visibility */
+        /* Fix dropdown option text visibility - override inline styles */
+        select {
+            background: rgba(255,255,255,0.2) !important;
+            color: #fff !important;
+        }
+
         select option {
-            background-color: #fff;
-            color: #000;
+            background-color: #fff !important;
+            color: #000 !important;
+            padding: 4px 8px !important;
+        }
+
+        /* Selected option styling */
+        select option:checked {
+            background-color: #4a90e2 !important;
+            color: #fff !important;
         }
     </style>
 </head>
@@ -573,7 +585,7 @@
                     <h2>Font Family</h2>
                     <div class="control-group">
                         <label>Select Font</label>
-                        <select id="fontFamily" style="width: 100%; padding: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; color: #fff;">
+                        <select id="fontFamily" style="width: 100%; padding: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 6px;">
                             <option value="Inter">Inter (Default)</option>
                             <option value="Roboto">Roboto</option>
                             <option value="Open Sans">Open Sans</option>
@@ -632,7 +644,7 @@
                     <h2>Text Transform</h2>
                     <div class="control-group">
                         <label>Heading Transform</label>
-                        <select id="headingTransform" style="width: 100%; padding: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; color: #fff;">
+                        <select id="headingTransform" style="width: 100%; padding: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 6px;">
                             <option value="none">Normal</option>
                             <option value="uppercase">UPPERCASE</option>
                             <option value="lowercase">lowercase</option>
@@ -641,7 +653,7 @@
                     </div>
                     <div class="control-group">
                         <label>Header Alignment</label>
-                        <select id="headerAlignment" style="width: 100%; padding: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; color: #fff;">
+                        <select id="headerAlignment" style="width: 100%; padding: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 6px;">
                             <option value="left">Left</option>
                             <option value="center" selected>Center</option>
                             <option value="right">Right</option>
@@ -675,7 +687,7 @@
                     </div>
                     <div class="control-group">
                         <label>Animation Type</label>
-                        <select id="hoverAnimation" style="width: 100%; padding: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; color: #fff;">
+                        <select id="hoverAnimation" style="width: 100%; padding: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 6px;">
                             <option value="fade">Fade</option>
                             <option value="lift">Lift Up</option>
                             <option value="scale">Scale</option>
@@ -726,7 +738,7 @@
                     </div>
                     <div class="control-group">
                         <label>Icon Position</label>
-                        <select id="iconPosition" style="width: 100%; padding: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; color: #fff;">
+                        <select id="iconPosition" style="width: 100%; padding: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 6px;">
                             <option value="left">Left of Text</option>
                             <option value="right">Right of Text</option>
                         </select>
@@ -900,7 +912,7 @@
                     </div>
                     <div class="control-group">
                         <label>Border Style</label>
-                        <select id="borderStyle" style="width: 100%; padding: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; color: #fff;">
+                        <select id="borderStyle" style="width: 100%; padding: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 6px;">
                             <option value="solid">Solid</option>
                             <option value="dashed">Dashed</option>
                             <option value="dotted">Dotted</option>
